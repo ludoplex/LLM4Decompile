@@ -67,10 +67,10 @@ static char *combine_code(const char *decompiled, const char *test_code, const c
     char *dec_code = remove_includes(decompiled);
     char *test_code_clean = remove_includes(test_code);
 
-    /* Calculate total size */
+    /* Calculate total size with generous padding for newlines and null terminator */
     size_t total_size = strlen(dec_includes) + strlen(test_includes) +
                         strlen(orig_includes) + strlen(dec_code) +
-                        strlen(test_code_clean) + 16;
+                        strlen(test_code_clean) + 64;  /* Extra padding for safety */
 
     char *combined = malloc(total_size);
     if (!combined) {

@@ -60,8 +60,9 @@ static void print_usage(const char *program) {
 static ResultCode compile_to_object(const char *input_file, const char *output_file,
                                     OptLevel opt_level, int timeout) {
     char cmd[MAX_PATH_LEN * 2];
-    snprintf(cmd, sizeof(cmd), "gcc -c %s -o %s %s -lm 2>&1",
-             input_file, output_file, opt_level_str(opt_level));
+    /* gcc -c [opt_flag] [input] -o [output] -lm */
+    snprintf(cmd, sizeof(cmd), "gcc -c %s %s -o %s -lm 2>&1",
+             opt_level_str(opt_level), input_file, output_file);
 
     int ret = run_command_timeout(cmd, timeout);
     if (ret != 0) {

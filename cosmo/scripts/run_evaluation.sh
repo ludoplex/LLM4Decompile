@@ -222,15 +222,16 @@ update_stats() {
 # Helper function to calculate rate without bc
 # Uses awk as fallback which is more portable
 calc_rate() {
-    numerator="$1"
-    denominator="$2"
+    _numerator="$1"
+    _denominator="$2"
     if command -v bc >/dev/null 2>&1; then
-        echo "scale=4; $numerator / $denominator" | bc 2>/dev/null
+        echo "scale=4; $_numerator / $_denominator" | bc 2>/dev/null
     elif command -v awk >/dev/null 2>&1; then
-        awk "BEGIN {printf \"%.4f\", $numerator / $denominator}" 2>/dev/null
+        # Use awk variable passing for portability
+        awk -v num="$_numerator" -v den="$_denominator" 'BEGIN {printf "%.4f", num / den}' 2>/dev/null
     else
         # Shell arithmetic fallback (integer percentage)
-        echo "$((numerator * 100 / denominator))%"
+        echo "$((_numerator * 100 / _denominator))%"
     fi
 }
 
