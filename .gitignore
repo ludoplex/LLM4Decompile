@@ -2,7 +2,6 @@
 .vscode
 /*.jsonl
 /*.json
-/*.sh
 /*.bak
 
 # Byte-compiled / optimized / DLL files
@@ -170,5 +169,13 @@ cython_debug/
 
 # Demo file
 flagged/
-*.sh
 logs/
+
+# Cosmopolitan build artifacts
+cosmo/build/
+cosmo/dist/
+*.com
+*.o
+
+# CodeQL artifacts
+_codeql_detected_source_root
