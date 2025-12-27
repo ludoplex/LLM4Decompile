@@ -179,19 +179,13 @@ static int cmd_preprocess(int argc, char *argv[]) {
     char preprocess_path[MAX_PATH_LEN];
 
     /* Try to find preprocess tool in same directory as this executable */
-    char exe_path[MAX_PATH_LEN];
-    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-    if (len != -1) {
-        exe_path[len] = '\0';
-        char *last_slash = strrchr(exe_path, '/');
-        if (last_slash) {
-            *last_slash = '\0';
-            snprintf(preprocess_path, sizeof(preprocess_path),
-                     "%s/llm4decompile-preprocess", exe_path);
-        } else {
-            strcpy(preprocess_path, "llm4decompile-preprocess");
-        }
+    char *exe_dir = get_executable_dir();
+    if (exe_dir) {
+        snprintf(preprocess_path, sizeof(preprocess_path),
+                 "%s/llm4decompile-preprocess", exe_dir);
+        free(exe_dir);
     } else {
+        /* Fall back to searching PATH */
         strcpy(preprocess_path, "llm4decompile-preprocess");
     }
 
@@ -259,19 +253,13 @@ static int cmd_evaluate(int argc, char *argv[]) {
     char evaluate_path[MAX_PATH_LEN];
 
     /* Try to find evaluate tool in same directory as this executable */
-    char exe_path[MAX_PATH_LEN];
-    ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-    if (len != -1) {
-        exe_path[len] = '\0';
-        char *last_slash = strrchr(exe_path, '/');
-        if (last_slash) {
-            *last_slash = '\0';
-            snprintf(evaluate_path, sizeof(evaluate_path),
-                     "%s/llm4decompile-evaluate", exe_path);
-        } else {
-            strcpy(evaluate_path, "llm4decompile-evaluate");
-        }
+    char *exe_dir = get_executable_dir();
+    if (exe_dir) {
+        snprintf(evaluate_path, sizeof(evaluate_path),
+                 "%s/llm4decompile-evaluate", exe_dir);
+        free(exe_dir);
     } else {
+        /* Fall back to searching PATH */
         strcpy(evaluate_path, "llm4decompile-evaluate");
     }
 

@@ -179,4 +179,11 @@ void print_info(const char *fmt, ...);
  */
 void print_version(const char *program_name);
 
+/**
+ * Get the directory containing the current executable
+ * Portable across Linux, macOS, BSD, and Windows
+ * Returns dynamically allocated path (caller must free), or NULL on failure
+ */
+char *get_executable_dir(void);
+
 #endif /* LLM4DECOMPILE_COMMON_H */

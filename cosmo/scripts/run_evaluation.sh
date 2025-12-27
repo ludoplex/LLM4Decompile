@@ -219,6 +219,21 @@ update_stats() {
     esac
 }
 
+# Helper function to calculate rate without bc
+# Uses awk as fallback which is more portable
+calc_rate() {
+    numerator="$1"
+    denominator="$2"
+    if command -v bc >/dev/null 2>&1; then
+        echo "scale=4; $numerator / $denominator" | bc 2>/dev/null
+    elif command -v awk >/dev/null 2>&1; then
+        awk "BEGIN {printf \"%.4f\", $numerator / $denominator}" 2>/dev/null
+    else
+        # Shell arithmetic fallback (integer percentage)
+        echo "$((numerator * 100 / denominator))%"
+    fi
+}
+
 # Print statistics summary
 print_summary() {
     NUM_PER_OPT=$((TOTAL / 4))
@@ -229,20 +244,20 @@ print_summary() {
     echo ""
     
     if [ $NUM_PER_OPT -gt 0 ]; then
-        COMPILE_RATE_O0=$(echo "scale=4; $COMPILED_O0 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
-        RUN_RATE_O0=$(echo "scale=4; $EXECUTED_O0 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
+        COMPILE_RATE_O0=$(calc_rate "$COMPILED_O0" "$NUM_PER_OPT")
+        RUN_RATE_O0=$(calc_rate "$EXECUTED_O0" "$NUM_PER_OPT")
         stat_line "O0: Compile Rate: $COMPILE_RATE_O0, Run Rate: $RUN_RATE_O0"
         
-        COMPILE_RATE_O1=$(echo "scale=4; $COMPILED_O1 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
-        RUN_RATE_O1=$(echo "scale=4; $EXECUTED_O1 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
+        COMPILE_RATE_O1=$(calc_rate "$COMPILED_O1" "$NUM_PER_OPT")
+        RUN_RATE_O1=$(calc_rate "$EXECUTED_O1" "$NUM_PER_OPT")
         stat_line "O1: Compile Rate: $COMPILE_RATE_O1, Run Rate: $RUN_RATE_O1"
         
-        COMPILE_RATE_O2=$(echo "scale=4; $COMPILED_O2 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
-        RUN_RATE_O2=$(echo "scale=4; $EXECUTED_O2 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
+        COMPILE_RATE_O2=$(calc_rate "$COMPILED_O2" "$NUM_PER_OPT")
+        RUN_RATE_O2=$(calc_rate "$EXECUTED_O2" "$NUM_PER_OPT")
         stat_line "O2: Compile Rate: $COMPILE_RATE_O2, Run Rate: $RUN_RATE_O2"
         
-        COMPILE_RATE_O3=$(echo "scale=4; $COMPILED_O3 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
-        RUN_RATE_O3=$(echo "scale=4; $EXECUTED_O3 / $NUM_PER_OPT" | bc 2>/dev/null || echo "N/A")
+        COMPILE_RATE_O3=$(calc_rate "$COMPILED_O3" "$NUM_PER_OPT")
+        RUN_RATE_O3=$(calc_rate "$EXECUTED_O3" "$NUM_PER_OPT")
         stat_line "O3: Compile Rate: $COMPILE_RATE_O3, Run Rate: $RUN_RATE_O3"
     fi
     
@@ -251,8 +266,8 @@ print_summary() {
     TOTAL_EXECUTED=$((EXECUTED_O0 + EXECUTED_O1 + EXECUTED_O2 + EXECUTED_O3))
     
     if [ $TOTAL -gt 0 ]; then
-        OVERALL_COMPILE=$(echo "scale=4; $TOTAL_COMPILED / $TOTAL" | bc 2>/dev/null || echo "N/A")
-        OVERALL_RUN=$(echo "scale=4; $TOTAL_EXECUTED / $TOTAL" | bc 2>/dev/null || echo "N/A")
+        OVERALL_COMPILE=$(calc_rate "$TOTAL_COMPILED" "$TOTAL")
+        OVERALL_RUN=$(calc_rate "$TOTAL_EXECUTED" "$TOTAL")
         stat_line "Overall: Compile Rate: $OVERALL_COMPILE, Run Rate: $OVERALL_RUN"
     fi
 }

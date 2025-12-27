@@ -61,7 +61,7 @@ static ResultCode compile_to_object(const char *input_file, const char *output_f
                                     OptLevel opt_level, int timeout) {
     char cmd[MAX_PATH_LEN * 2];
     snprintf(cmd, sizeof(cmd), "gcc -c %s -o %s %s -lm 2>&1",
-             opt_level_str(opt_level), output_file, input_file);
+             input_file, output_file, opt_level_str(opt_level));
 
     int ret = run_command_timeout(cmd, timeout);
     if (ret != 0) {

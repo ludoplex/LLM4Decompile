@@ -16,6 +16,18 @@
 #include <dirent.h>
 #include <time.h>
 
+/* Platform-specific includes for executable path detection */
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 /* Optimization level strings */
 static const char *opt_strings[] = {"-O0", "-O1", "-O2", "-O3"};
 static const char *opt_names[] = {"O0", "O1", "O2", "O3"};
@@ -176,8 +188,22 @@ int run_command_timeout(const char *cmd, int timeout_sec) {
 
 char *create_temp_dir(void) {
     char template[MAX_PATH_LEN];
-    const char *tmpdir = getenv("TMPDIR");
+    const char *tmpdir = NULL;
+
+    /* 
+     * Portable temporary directory detection:
+     * - TMPDIR: Standard Unix environment variable
+     * - TMP/TEMP: Windows environment variables
+     * - Platform defaults as fallback
+     */
+    tmpdir = getenv("TMPDIR");
+    if (!tmpdir) tmpdir = getenv("TMP");
+    if (!tmpdir) tmpdir = getenv("TEMP");
+#ifdef _WIN32
+    if (!tmpdir) tmpdir = "C:\\Windows\\Temp";
+#else
     if (!tmpdir) tmpdir = "/tmp";
+#endif
 
     snprintf(template, sizeof(template), "%s/llm4decompile.XXXXXX", tmpdir);
 
@@ -432,4 +458,75 @@ void print_version(const char *program_name) {
     printf("%s version %s\n", program_name, LLM4DECOMPILE_VERSION_STRING);
     printf("Built with Cosmopolitan Libc - Actually Portable Executable\n");
     printf("Runs on: Linux, macOS, Windows, FreeBSD, OpenBSD, NetBSD\n");
+}
+
+char *get_executable_dir(void) {
+    char exe_path[MAX_PATH_LEN];
+    ssize_t len = -1;
+
+    /*
+     * Portable executable path detection for Cosmopolitan/APE binaries.
+     * Cosmopolitan Libc provides cross-platform compatibility, but we still
+     * need to handle the different OS conventions for finding the executable.
+     */
+
+#if defined(__linux__)
+    /* Linux: /proc/self/exe */
+    len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+#elif defined(__APPLE__)
+    /* macOS: _NSGetExecutablePath or /proc/curproc/file */
+    uint32_t bufsize = sizeof(exe_path);
+    if (_NSGetExecutablePath(exe_path, &bufsize) == 0) {
+        len = (ssize_t)strlen(exe_path);
+    }
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+    /* FreeBSD/DragonFly: /proc/curproc/file or sysctl */
+    len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
+    if (len == -1) {
+        /* Try sysctl as fallback */
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
+        size_t size = sizeof(exe_path);
+        if (sysctl(mib, 4, exe_path, &size, NULL, 0) == 0) {
+            len = (ssize_t)(size - 1);
+        }
+    }
+#elif defined(__NetBSD__)
+    /* NetBSD: /proc/curproc/exe */
+    len = readlink("/proc/curproc/exe", exe_path, sizeof(exe_path) - 1);
+#elif defined(__OpenBSD__)
+    /* OpenBSD: Limited support, try argv[0] fallback */
+    len = -1;  /* Will use fallback */
+#elif defined(_WIN32)
+    /* Windows: GetModuleFileName */
+    DWORD size = GetModuleFileNameA(NULL, exe_path, sizeof(exe_path));
+    if (size > 0 && size < sizeof(exe_path)) {
+        len = (ssize_t)size;
+        /* Convert backslashes to forward slashes for consistency */
+        for (char *p = exe_path; *p; p++) {
+            if (*p == '\\') *p = '/';
+        }
+    }
+#else
+    /* Unknown platform - try common methods */
+    len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+    if (len == -1) {
+        len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
+    }
+#endif
+
+    if (len == -1) {
+        return NULL;
+    }
+
+    exe_path[len] = '\0';
+
+    /* Find the directory by removing the filename */
+    char *last_slash = strrchr(exe_path, '/');
+    if (!last_slash) {
+        /* No slash found, return current directory */
+        return strdup(".");
+    }
+
+    *last_slash = '\0';
+    return strdup(exe_path);
 }
