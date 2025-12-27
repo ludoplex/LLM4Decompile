@@ -184,6 +184,32 @@ cd ghidra
 python demo.py
 ```
 
+### Portable C/APE Setup (Alternative to Docker)
+
+LLM4Decompile also provides a portable C implementation using [Cosmopolitan Libc](https://github.com/jart/cosmopolitan) that creates Actually Portable Executables (APE). These single-file executables run on Linux, macOS, Windows, and BSD without any runtime dependencies.
+
+```bash
+# Build APE executables
+cd cosmo
+./scripts/build.sh
+
+# Preprocess C code for decompilation (works on any OS)
+./build/bin/llm4decompile.com preprocess -i ../samples/sample.c -o sample -f func0 -a
+
+# Evaluate decompiled code
+./build/bin/llm4decompile.com evaluate -i decompiled.c -r tests.c
+
+# Create distributable package (executable + ZIP archive)
+./scripts/pack.sh
+```
+
+The APE distribution offers:
+- **Single file** that runs on Linux, macOS, Windows, FreeBSD, OpenBSD, NetBSD
+- **No dependencies** - no Python, no Docker, no runtime needed
+- **PKZIP format** - the executable is also a valid ZIP archive with bundled resources
+
+See [cosmo/README.md](cosmo/README.md) for detailed documentation.
+
 ## HumanEval-Decompile
 Data are stored in ``llm4decompile/decompile-eval/decompile-eval-executable-gcc-obj.json``, using JSON list format. There are 164*4 (O0, O1, O2, O3) samples, each with five keys:
 
